@@ -25,7 +25,7 @@ SOFTWARE.
 using System;
 using System.Net;
 
-namespace JoyfulSpiderLibrary.RobotParser
+namespace JoyfulSpider.Library.RobotParser
 {
     public class RobotParser
     {

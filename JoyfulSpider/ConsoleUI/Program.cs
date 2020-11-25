@@ -22,6 +22,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 */
 
+using JoyfulSpider.Library;
 using System;
 
 namespace JoyfulSpider.ConsoleUI
@@ -37,9 +38,9 @@ namespace JoyfulSpider.ConsoleUI
             ConsoleHelper.ColorWrite("Enter a Uri: ");
             string input = Console.ReadLine();
 
+            ErrorHandler.ReportErrorOnConsoleAndQuit("Ouch!", null);
+
             Uri uri = new Uri(input);
-
-
         }
     }
 }

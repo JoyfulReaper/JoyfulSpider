@@ -1,27 +1,28 @@
 ﻿// Just for testing
 
 using System;
+using System.Reflection;
+using JoyfulSpider.Library;
+using log4net;
 
-namespace JoyfulSpiderLibrary
+namespace JoyfulSpider.Library
 {
     public static class ErrorHandler
     {
-        public static void ReportErrorOnConsoleAndQuit(string error, Exception e)
+        public static void ReportErrorOnConsoleAndQuit(string message, Exception e)
         {
-            ConsoleColor old = Console.ForegroundColor;
-
-            Console.ForegroundColor = ConsoleColor.Red;
-
-            Console.WriteLine($"ERROR: {error}");
+            var log = GlobalConfig.GetLogger();
 
             if (e != null)
             {
-                Console.WriteLine(e.Message);
+                log.Fatal(message, e);
+            }
+            else
+            {
+                log.Fatal(message);
             }
 
-            Console.ForegroundColor = old;
             Console.WriteLine();
-
             Environment.Exit(-1);
         }
     }

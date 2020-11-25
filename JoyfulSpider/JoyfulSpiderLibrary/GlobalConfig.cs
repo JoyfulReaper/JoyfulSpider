@@ -22,13 +22,28 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 */
 
-using JoyfulSpiderLibrary.DataAccess;
+using JoyfulSpider.Library.DataAccess;
+using log4net;
+using System.Runtime.CompilerServices;
+using System.Reflection;
+using log4net.Repository;
+using log4net.Config;
+using System.IO;
 
-namespace JoyfulSpiderLibrary
+namespace JoyfulSpider.Library
 {
     public static class GlobalConfig
     {
         public static IDataConnection Connection { get; private set; }
+
+        private static ILoggerRepository logRepository = LogManager.GetRepository(Assembly.GetEntryAssembly());
+
+
+        static GlobalConfig()
+        {
+            var configFile = new FileInfo("log4net.config");
+            XmlConfigurator.Configure(logRepository, configFile); 
+        }
 
         public static void InitiliazeDataAccess(DataAccessType type)
         {
@@ -39,6 +54,7 @@ namespace JoyfulSpiderLibrary
             }
         }
 
-
+        public static ILog GetLogger(string name) => LogManager.GetLogger(name);
+        public static ILog GetLogger() => LogManager.GetLogger("JoyfulSpider");
     }
 }
