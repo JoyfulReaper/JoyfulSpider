@@ -70,8 +70,20 @@ namespace JoyfulSpider.Library.RobotParser
         /// The full text of the robots.txt file
         /// </summary>
         private string robotsText = string.Empty;
-        private List<string> disallowed = new List<string>(); //TODO convert to List<Uri>
-        private List<string> allowed = new List<string>(); //TODO convert to List<Uri>
+        /// <summary>
+        /// True if there is a Disallow: / rule
+        /// </summary>
+        public bool RootDisallowed { get; private set; }
+        /// <summary>
+        /// True if the spider has access to ANY links
+        /// </summary>
+        public bool AnyAllowed
+        {
+            get => allowed.Count > 0;
+        }
+
+        private List<Uri> disallowed = new List<Uri>();
+        private List<Uri> allowed = new List<Uri>();
 
 
         /// <summary>
@@ -161,11 +173,22 @@ namespace JoyfulSpider.Library.RobotParser
 
                 if(line.StartsWith("Allow:"))
                 {
-                    allowed.Add(line.Split(' ')[1]);
+                    string lineAllowed = line.Split(' ')[1];
+
+                    Uri UriAllowed = new Uri(BaseUri, lineAllowed);
+
+                    allowed.Add(UriAllowed);
                 }
                 else if(line.StartsWith("Disallow:"))
                 {
-                    disallowed.Add(line.Split(' ')[1]);
+                    string lineDisallowed = line.Split(' ')[1];
+
+                    if(lineDisallowed == "/")
+                    {
+                        RootDisallowed = true;
+                    }
+                    Uri UriDisallowed = new Uri(BaseUri, lineDisallowed);
+                    disallowed.Add(UriDisallowed);
                 }
                 else
                 {
@@ -173,6 +196,11 @@ namespace JoyfulSpider.Library.RobotParser
                     return;
                 }
             }
+        }
+
+        public bool Allowed(Uri uri)
+        {
+            throw new NotImplementedException();
         }
     }
 }
