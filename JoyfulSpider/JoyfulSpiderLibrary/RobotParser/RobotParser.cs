@@ -23,23 +23,48 @@ SOFTWARE.
 */
 
 using System;
+using System.Net;
 
-namespace JoyfulSpider.ConsoleUI
+namespace JoyfulSpiderLibrary.RobotParser
 {
-    class Program
+    public class RobotParser
     {
-        static void Main(string[] args)
+        public Uri BaseUri { get; private set; }
+        public string RobotFileName { get; set; } = "robots.txt";
+        public Uri RobotsUri
         {
-            ConsoleHelper.DefaultColor = ConsoleColor.DarkCyan;
+            get
+            {
+                if (BaseUri == null)
+                {
+                    throw new InvalidOperationException("BaseUri is null.");
+                }
 
-            ConsoleHelper.ColorWriteLine(ConsoleColor.Cyan, "Welcome to JoyfulSpider!\n");
-
-            ConsoleHelper.ColorWrite("Enter a Uri: ");
-            string input = Console.ReadLine();
-
-            Uri uri = new Uri(input);
-
-
+                return new Uri(BaseUri, RobotFileName);
+            }
         }
+        public string RobotsText { get; private set; }
+
+        public RobotParser(Uri baseUri, string robotFileName)
+        {
+            BaseUri = baseUri;
+            RobotFileName = robotFileName;
+        }
+
+        public RobotParser(Uri baseUri) : this(baseUri, "robots.txt") { }
+
+        public void DownloadRobotsTXT()
+        {
+            WebClient wc = new WebClient();
+
+            try
+            {
+                RobotsText = wc.DownloadString(RobotsUri);
+            } catch (Exception e)
+            {
+                ErrorHandler.ReportErrorOnConsoleAndQuit("DownloadRobotsTXT exception caught:", e);
+            }
+        }
+
     }
 }
