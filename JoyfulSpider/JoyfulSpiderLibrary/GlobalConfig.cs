@@ -36,6 +36,8 @@ namespace JoyfulSpider.Library
     {
         public static IDataConnection Connection { get; private set; }
 
+        public static string UserAgent { get; set; } = "JoyfulSpider Aplha";
+
         private static ILoggerRepository logRepository = LogManager.GetRepository(Assembly.GetEntryAssembly());
 
 

@@ -102,6 +102,8 @@ namespace JoyfulSpider.Library.RobotParser
 
             try
             {
+                WebClientHelper.AddHeaders(wc);
+
                 RobotsText = wc.DownloadString(RobotsUri);
             } catch (Exception e)
             {
