@@ -23,6 +23,8 @@ SOFTWARE.
 */
 
 using System;
+using System.Collections.Generic;
+using System.IO;
 using System.Net;
 
 namespace JoyfulSpider.Library.RobotParser
@@ -61,11 +63,16 @@ namespace JoyfulSpider.Library.RobotParser
             set 
             { 
                 robotsText = value;
-                // TODO parse the file
+                Parse();
             }
         }
-
+        /// <summary>
+        /// The full text of the robots.txt file
+        /// </summary>
         private string robotsText = string.Empty;
+        private List<string> disallowed = new List<string>(); //TODO convert to List<Uri>
+        private List<string> allowed = new List<string>(); //TODO convert to List<Uri>
+
 
         /// <summary>
         /// Construct a RobotParser with the given baseUri and RobotFileName
@@ -85,12 +92,17 @@ namespace JoyfulSpider.Library.RobotParser
         {
             BaseUri = baseUri;
             DownloadRobotsTXT();
-            // TODO parse the file
+            Parse();
         }
 
+        /// <summary>
+        /// Construct a RobotParser with the given robots.txt text
+        /// </summary>
+        /// <param name="robotsFileText">Robots.txt text</param>
         public RobotParser(string robotsFileText)
         {
-            // TODO parse the file
+            RobotsText = robotsFileText;
+            Parse();
         }
 
         /// <summary>
@@ -107,9 +119,60 @@ namespace JoyfulSpider.Library.RobotParser
                 RobotsText = wc.DownloadString(RobotsUri);
             } catch (Exception e)
             {
-                ErrorHandler.ReportErrorOnConsoleAndQuit("DownloadRobotsTXT exception caught:", e); // TODO Better logging/Error handling
+                ErrorHandler.ReportErrorOnConsoleAndQuit("DownloadRobotsTXT() exception caught:", e); // TODO Better logging/Error handling
             }
         }
 
+        public void Parse()
+        {
+            Parse(robotsText);
+        }
+
+        // TODO: Currently only Parses Allow and Disallow
+        public void Parse(string robotsText)
+        {
+            using (StringReader reader = new StringReader(robotsText))
+            {
+                string line = String.Empty;
+
+                while(line != null)
+                {
+                    line = reader.ReadLine();
+                    if(line.StartsWith("User-agent:"))
+                    {
+                        string agent = line.Split(' ')[1];
+                        if(agent == "*" || agent == GlobalConfig.UserAgent)
+                        {
+                            CheckPermissions(reader, out bool moreLines);
+                            line = moreLines ? string.Empty : null;
+                        }
+                    }
+                }
+            }
+        }
+
+        private void CheckPermissions(StringReader reader, out bool moreLines)
+        {
+            string line;
+
+            while(true)
+            {
+                line = reader.ReadLine();
+
+                if(line.StartsWith("Allow:"))
+                {
+                    allowed.Add(line.Split(' ')[1]);
+                }
+                else if(line.StartsWith("Disallow:"))
+                {
+                    disallowed.Add(line.Split(' ')[1]);
+                }
+                else
+                {
+                    moreLines = line == null;
+                    return;
+                }
+            }
+        }
     }
 }
