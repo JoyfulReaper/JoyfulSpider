@@ -29,8 +29,17 @@ namespace JoyfulSpider.Library.RobotParser
 {
     public class RobotParser
     {
-        public Uri BaseUri { get; private set; }
+        /// <summary>
+        /// The base Uri
+        /// </summary>
+        public Uri BaseUri { get; private set; } = null;
+        /// <summary>
+        /// The name of the robots.txt file to parse
+        /// </summary>
         public string RobotFileName { get; set; } = "robots.txt";
+        /// <summary>
+        /// The absolute Uri of the RobotsFileName
+        /// </summary>
         public Uri RobotsUri
         {
             get
@@ -43,18 +52,50 @@ namespace JoyfulSpider.Library.RobotParser
                 return new Uri(BaseUri, RobotFileName);
             }
         }
-        public string RobotsText { get; private set; }
-
-        public RobotParser(Uri baseUri, string robotFileName)
+        /// <summary>
+        /// The full text of the robots file
+        /// </summary>
+        public string RobotsText
         {
-            BaseUri = baseUri;
-            RobotFileName = robotFileName;
-
-            DownloadRobotsTXT();
+            get => robotsText;
+            set 
+            { 
+                robotsText = value;
+                // TODO parse the file
+            }
         }
 
-        public RobotParser(Uri baseUri) : this(baseUri, "robots.txt") { }
+        private string robotsText = string.Empty;
 
+        /// <summary>
+        /// Construct a RobotParser with the given baseUri and RobotFileName
+        /// </summary>
+        /// <param name="baseUri">The best Uri</param>
+        /// <param name="robotFileName">The filename to download and parse</param>
+        public RobotParser(Uri baseUri, string robotFileName) : this(baseUri)
+        {
+            RobotFileName = robotFileName;
+        }
+
+        /// <summary>
+        /// Construct a RobotParser with the given baseUri
+        /// </summary>
+        /// <param name="baseUri"></param>
+        public RobotParser(Uri baseUri)
+        {
+            BaseUri = baseUri;
+            DownloadRobotsTXT();
+            // TODO parse the file
+        }
+
+        public RobotParser(string robotsFileText)
+        {
+            // TODO parse the file
+        }
+
+        /// <summary>
+        /// Download the robots.txt file
+        /// </summary>
         public void DownloadRobotsTXT()
         {
             WebClient wc = new WebClient();
@@ -64,7 +105,7 @@ namespace JoyfulSpider.Library.RobotParser
                 RobotsText = wc.DownloadString(RobotsUri);
             } catch (Exception e)
             {
-                ErrorHandler.ReportErrorOnConsoleAndQuit("DownloadRobotsTXT exception caught:", e);
+                ErrorHandler.ReportErrorOnConsoleAndQuit("DownloadRobotsTXT exception caught:", e); // TODO Better logging/Error handling
             }
         }
 
