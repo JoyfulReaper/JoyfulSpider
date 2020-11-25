@@ -49,6 +49,8 @@ namespace JoyfulSpider.Library.RobotParser
         {
             BaseUri = baseUri;
             RobotFileName = robotFileName;
+
+            DownloadRobotsTXT();
         }
 
         public RobotParser(Uri baseUri) : this(baseUri, "robots.txt") { }

@@ -22,7 +22,8 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 */
 
-using JoyfulSpider.Library;
+
+using JoyfulSpider.Library.RobotParser;
 using System;
 
 namespace JoyfulSpider.ConsoleUI
@@ -34,13 +35,14 @@ namespace JoyfulSpider.ConsoleUI
             ConsoleHelper.DefaultColor = ConsoleColor.DarkCyan;
 
             ConsoleHelper.ColorWriteLine(ConsoleColor.Cyan, "Welcome to JoyfulSpider!\n");
-
             ConsoleHelper.ColorWrite("Enter a Uri: ");
             string input = Console.ReadLine();
 
-            ErrorHandler.ReportErrorOnConsoleAndQuit("Ouch!", null);
-
             Uri uri = new Uri(input);
+            RobotParser rp = new RobotParser(uri);
+
+            ConsoleHelper.ColorWriteLine(ConsoleColor.Red, "Dumping robots file: ");
+            ConsoleHelper.ColorWriteLine(rp.RobotsText);
         }
     }
 }
