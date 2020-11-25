@@ -22,6 +22,9 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 */
 
+// References: https://moz.com/learn/seo/robotstxt
+// http://www.robotstxt.org/orig.html
+
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -79,7 +82,10 @@ namespace JoyfulSpider.Library.RobotParser
         /// </summary>
         public bool AnyAllowed
         {
-            get => allowed.Count > 0;
+            get
+            {
+                return allowed.Count > 0 && RootDisallowed == false;
+            }
         }
 
         private List<Uri> disallowed = new List<Uri>();
@@ -201,6 +207,11 @@ namespace JoyfulSpider.Library.RobotParser
         public bool Allowed(Uri uri)
         {
             throw new NotImplementedException();
+
+            if(!AnyAllowed)
+            {
+                return false;
+            }
         }
     }
 }
