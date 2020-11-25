@@ -7,6 +7,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ConsoleUI", "ConsoleUI\Cons
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "JoyfulSpiderLibrary", "JoyfulSpiderLibrary\JoyfulSpiderLibrary.csproj", "{3E454F5E-9235-4837-B594-2970D02F4199}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "JoyfulSpiderTests", "JoyfulSpiderTests\JoyfulSpiderTests.csproj", "{F8C0DD9F-EF23-4AAF-A2E4-9578481B56CF}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -21,6 +23,10 @@ Global
 		{3E454F5E-9235-4837-B594-2970D02F4199}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{3E454F5E-9235-4837-B594-2970D02F4199}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{3E454F5E-9235-4837-B594-2970D02F4199}.Release|Any CPU.Build.0 = Release|Any CPU
+		{F8C0DD9F-EF23-4AAF-A2E4-9578481B56CF}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{F8C0DD9F-EF23-4AAF-A2E4-9578481B56CF}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{F8C0DD9F-EF23-4AAF-A2E4-9578481B56CF}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{F8C0DD9F-EF23-4AAF-A2E4-9578481B56CF}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
