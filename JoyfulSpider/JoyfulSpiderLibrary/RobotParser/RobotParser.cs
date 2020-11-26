@@ -2,6 +2,7 @@
 MIT License
 
 Copyright (c) 2020 Kyle Givler
+http://github.com/JoyfulReaper/JoyfulSpider
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -98,24 +99,37 @@ namespace JoyfulSpider.Library.RobotParser
         {
             get
             {
+                if(!RobotsValid)
+                {
+                    return true;
+                }
+
                 if(HonorWildCardDisallow && foundWildcardDisallow)
                 {
                     return false;
                 }
 
-                return allowed.Count > 0 && RootDisallowed == false;
+                return allowedUris.Count > 0 && RootDisallowed == false;
             }
         }
 
+        /// <summary>
+        /// If true honor the non-standard Disallow: * rule, if false ignore it.
+        /// </summary>
         public bool HonorWildCardDisallow { get; set; } = false;
-      
-        private readonly List<Uri> disallowed = new List<Uri>();
-        private readonly List<Uri> allowed = new List<Uri>();
+
+        /// <summary>
+        /// The date and time the robots file was downloaded
+        /// </summary>
+        public DateTimeOffset? RobotFetchDate { get; private set; } = null;
+
+        private readonly List<Uri> disallowedUris = new List<Uri>();
+        private readonly List<Uri> allowedUris = new List<Uri>();
 
         private bool foundWildcardDisallow = false;
+        private bool RobotsValid = false;
 
         private readonly ILog logger = GlobalConfig.GetLogger("RobotParser");
-
 
         /// <summary>
         /// Construct a RobotParser with the given baseUri and RobotFileName
@@ -170,10 +184,11 @@ namespace JoyfulSpider.Library.RobotParser
                 WebClientHelper.AddHeaders(wc);
 
                 RobotsText = wc.DownloadString(RobotsUri);
+                RobotFetchDate = DateTimeOffset.Now;
             } 
             catch (Exception e)
             {
-                ErrorHandler.ReportErrorOnConsoleAndQuit("DownloadRobotsTXT() exception caught:", e); // TODO Better logging/Error handling
+                ErrorHandler.ReportErrorAndQuit("DownloadRobotsTXT() exception caught:", e); // TODO Better logging/Error handling
             }
 
             logger.Info("DownloadRobotsTXT(): robots.txt file downloaded successfully.");
@@ -195,6 +210,8 @@ namespace JoyfulSpider.Library.RobotParser
         {
             logger.Debug("Prase(robotsText)");
 
+            bool foundrule = false;
+
             using (StringReader reader = new StringReader(robotsText))
             {
                 string line = String.Empty;
@@ -204,17 +221,18 @@ namespace JoyfulSpider.Library.RobotParser
 
                 while (line != null)
                 {
-                    if (line.StartsWith("User-agent:"))
+                    if (line.StartsWith("User-agent:")) // Found User-agent entry
                     {
+                        foundrule = true;
                         currentAgent = line.Split(' ')[1];
 
                         logger.Info($"Found User-agent: {currentAgent}");
                     }
-                    else if (line.StartsWith("Allow") || line.StartsWith("Disallow"))
+                    else if (line.StartsWith("Allow") || line.StartsWith("Disallow")) // Found Allow or Disallow entry
                     {
                         logger.Debug($"Found Allow/Disallow Rule for {currentAgent}");
 
-                        if (currentAgent == "*" || currentAgent == GlobalConfig.UserAgent)
+                        if (currentAgent == "*" || currentAgent == GlobalConfig.UserAgent) // The rule applies to us
                         {
                             if (line != null)
                             {
@@ -224,6 +242,11 @@ namespace JoyfulSpider.Library.RobotParser
                     }
 
                     line = reader.ReadLine();
+                }
+
+                if(!foundrule) // No rules were found
+                {
+                    RobotsValid = false;
                 }
             }
         }
@@ -240,11 +263,20 @@ namespace JoyfulSpider.Library.RobotParser
             {
                 string lineAllowed = line.Split(' ')[1];
 
+                if(lineAllowed == "/")
+                {
+                    return;
+                }
+
                 Uri UriAllowed = new Uri(BaseUri, lineAllowed);
 
-                if (!allowed.Contains(UriAllowed))
+                if (!allowedUris.Contains(UriAllowed))
                 {
-                    allowed.Add(UriAllowed);
+                    if (!CheckIfUnsupported(UriAllowed))
+                    {
+                        allowedUris.Add(UriAllowed);
+                    }
+
                     logger.Debug($"Added Allow rule: Allow: {lineAllowed}");
                 }
                 else
@@ -272,9 +304,12 @@ namespace JoyfulSpider.Library.RobotParser
 
                 Uri UriDisallowed = new Uri(BaseUri, lineDisallowed);
 
-                if (!disallowed.Contains(UriDisallowed))
+                if (!disallowedUris.Contains(UriDisallowed))
                 {
-                    disallowed.Add(UriDisallowed);
+                    if (!CheckIfUnsupported(UriDisallowed))
+                    {
+                        disallowedUris.Add(UriDisallowed);
+                    }
                     logger.Debug($"Added Disallow rule: Disallow: {lineDisallowed}");
                 }
                 else
@@ -288,18 +323,58 @@ namespace JoyfulSpider.Library.RobotParser
             }
         }
 
-        public bool Allowed(Uri uri)
+        public bool Allowed(Uri targetUri) // I am pretty sure this is not correct at this point :(
         {
-            throw new NotImplementedException();
+            logger.Debug($"Allowed(Uri {targetUri})");
+            bool allowed = true;
 
-            logger.Debug($"Allowed(Uri {uri}");
-
-            if(!AnyAllowed)
+            // Check if we are not allowed to crawl anything
+            if (!AnyAllowed)
             {
+                logger.Info("We are not allowed to crawl any Uris!");
                 return false;
             }
 
-            return true;
+            // Check if we are explicitly disallowed to crawl
+            foreach (var u in disallowedUris)
+            {
+                string absoulutePath = u.AbsolutePath;
+                string targetAbsolutePath = targetUri.AbsolutePath;
+
+                if(targetAbsolutePath.Contains(absoulutePath))
+                {
+                    allowed = false;
+                    break;
+                }
+            }
+
+            // Check if we are explicitly allowed to crawl
+            foreach (var u in allowedUris)
+            {
+                if (u == targetUri)
+                {
+                    allowed = true;
+                    break;
+                }
+
+                string absoulutePath = u.AbsolutePath;
+                string targetAbsoulutePath = targetUri.AbsolutePath;
+
+                if (targetAbsoulutePath.EndsWith(u.AbsolutePath))
+                {
+                    allowed = true;
+                    break;
+                }
+            }
+
+            logger.Debug($"We {(allowed ? "are" : "are NOT")} allowed to crawl {targetUri}");
+            return allowed;
         }
+
+        private bool CheckIfUnsupported(Uri uri)
+        {
+            return false;
+        }
+
     }
 }
