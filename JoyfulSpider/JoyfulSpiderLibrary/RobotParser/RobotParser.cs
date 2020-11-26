@@ -107,7 +107,12 @@ namespace JoyfulSpider.Library.RobotParser
         {
             get
             {
-                if(!RobotsValid)
+                if (RootDisallowed && allowedUris.Count == 0)
+                {
+                    return false;
+                }
+
+                if (!RobotsValid)
                 {
                     return true;
                 }
