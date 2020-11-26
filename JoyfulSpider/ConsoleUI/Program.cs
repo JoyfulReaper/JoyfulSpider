@@ -2,6 +2,7 @@
 MIT License
 
 Copyright (c) 2020 Kyle Givler
+http://github.com/JoyfulReaper/JoyfulSpider
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -41,8 +42,24 @@ namespace JoyfulSpider.ConsoleUI
             Uri uri = new Uri(input);
             RobotParser rp = new RobotParser(uri);
 
-            //ConsoleHelper.ColorWriteLine(ConsoleColor.Red, "Dumping robots file: ");
-            //ConsoleHelper.ColorWriteLine(rp.RobotsText);
+            Uri baseUri = rp.BaseUri;
+            while (true)
+            {
+                ConsoleHelper.ColorWriteLine($"Check to see if we are allowed to crawl a Uri relative to {baseUri}");
+                ConsoleHelper.ColorWrite("Uri to check: ");
+                var checkInput = Console.ReadLine();
+
+                Uri checkUri = new Uri(baseUri, checkInput);
+
+                if (rp.Allowed(checkUri))
+                {
+                    ConsoleHelper.ColorWriteLine(ConsoleColor.Green, $"We are allowed to crwal: {checkUri}");
+                }
+                else
+                {
+                    ConsoleHelper.ColorWriteLine(ConsoleColor.Red, $"We are NOT allowed to crawl: {checkUri}");
+                } 
+            }
         }
     }
 }

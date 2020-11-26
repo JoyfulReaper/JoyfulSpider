@@ -2,6 +2,7 @@
 MIT License
 
 Copyright (c) 2020 Kyle Givler
+http://github.com/JoyfulReaper/JoyfulSpider
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -22,15 +23,19 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 */
 
+// We can likely re-factor some stuff to get rid of this class,
+// Which was used for testing before switching to log4net
+// Or keep it as an easy way to quit on a Fatal error
+
 using System;
 
 namespace JoyfulSpider.Library
 {
     public static class ErrorHandler
     {
-        public static void ReportErrorOnConsoleAndQuit(string message, Exception e)
+        public static void ReportErrorAndQuit(string message, Exception e)
         {
-            var log = GlobalConfig.GetLogger();
+            var log = GlobalConfig.GetLogger("FatalErrorReporter");
 
             if (e != null)
             {
@@ -41,7 +46,6 @@ namespace JoyfulSpider.Library
                 log.Fatal(message);
             }
 
-            Console.WriteLine();
             Environment.Exit(-1);
         }
     }

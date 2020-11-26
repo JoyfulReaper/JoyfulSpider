@@ -2,6 +2,7 @@
 MIT License
 
 Copyright (c) 2020 Kyle Givler
+http://github.com/JoyfulReaper/JoyfulSpider
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal

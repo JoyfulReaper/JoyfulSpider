@@ -2,6 +2,7 @@
 MIT License
 
 Copyright (c) 2020 Kyle Givler
+http://github.com/JoyfulReaper/JoyfulSpider
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -24,7 +25,6 @@ SOFTWARE.
 
 using JoyfulSpider.Library.DataAccess;
 using log4net;
-using System.Runtime.CompilerServices;
 using System.Reflection;
 using log4net.Repository;
 using log4net.Config;
