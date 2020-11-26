@@ -53,7 +53,7 @@ namespace JoyfulSpider.ConsoleUI
 
                 if (rp.Allowed(checkUri))
                 {
-                    ConsoleHelper.ColorWriteLine(ConsoleColor.Green, $"We are allowed to crwal: {checkUri}");
+                    ConsoleHelper.ColorWriteLine(ConsoleColor.Green, $"We are allowed to crawl: {checkUri}");
                 }
                 else
                 {

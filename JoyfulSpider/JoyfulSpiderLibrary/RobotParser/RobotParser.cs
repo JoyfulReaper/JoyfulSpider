@@ -33,6 +33,14 @@ https://en.wikipedia.org/wiki/Robots_exclusion_standard
 // https://en.wikipedia.org/wiki/Robots_exclusion_standard#Nonstandard_extensions
 // TODO: Nonstandard extensions: Crawl-Delay, Sitemap
 
+// Also note Pattern-Matching is not reconginzed by the standard as far as I know
+// https://moz.com/learn/seo/robotstxt (See Pattern-matching section)
+// * is a wildcard
+// $ matches the end of the url
+// Ex: 
+//   Allow: /alerts/$
+//   Disallow: / intl/*/about/views/
+
 using log4net;
 using System;
 using System.Collections.Generic;
@@ -221,16 +229,16 @@ namespace JoyfulSpider.Library.RobotParser
 
                 while (line != null)
                 {
-                    if (line.StartsWith("User-agent:")) // Found User-agent entry
+                    if (line.StartsWith("User-agent")) // Found User-agent entry
                     {
                         foundrule = true;
                         currentAgent = line.Split(' ')[1];
 
-                        logger.Info($"Found User-agent: {currentAgent}");
+                        logger.Info($"Parse(robotsText): Found User-agent: {currentAgent}");
                     }
                     else if (line.StartsWith("Allow") || line.StartsWith("Disallow")) // Found Allow or Disallow entry
                     {
-                        logger.Debug($"Found Allow/Disallow Rule for {currentAgent}");
+                        logger.Debug($"Parse(robotsText): Found Allow/Disallow Rule for {currentAgent}");
 
                         if (currentAgent == "*" || currentAgent == GlobalConfig.UserAgent) // The rule applies to us
                         {
@@ -261,61 +269,11 @@ namespace JoyfulSpider.Library.RobotParser
 
             if (line.StartsWith("Allow:"))
             {
-                string lineAllowed = line.Split(' ')[1];
-
-                if(lineAllowed == "/")
-                {
-                    return;
-                }
-
-                Uri UriAllowed = new Uri(BaseUri, lineAllowed);
-
-                if (!allowedUris.Contains(UriAllowed))
-                {
-                    if (!CheckIfUnsupported(UriAllowed))
-                    {
-                        allowedUris.Add(UriAllowed);
-                    }
-
-                    logger.Debug($"Added Allow rule: Allow: {lineAllowed}");
-                }
-                else
-                {
-                    logger.Debug($"Rule already existed: Allow: {lineAllowed}");
-                }
+                ProcessAllowRule(line);
             }
             else if (line.StartsWith("Disallow:"))
             {
-                string lineDisallowed = line.Split(' ')[1];
-
-                if(lineDisallowed == "*") 
-                {
-                    // Note "*" is non-standard. (https://en.wikipedia.org/wiki/Robots_exclusion_standard#Nonstandard_extensions)
-                    // We ignore these rules unless HonorWildcardDisallow == true!
-                    foundWildcardDisallow = true;
-                   
-                    logger.Warn("Found Disallow *, which is not standards compliant!");
-                }
-
-                if (lineDisallowed == "/") 
-                {
-                    RootDisallowed = true;
-                }
-
-                Uri UriDisallowed = new Uri(BaseUri, lineDisallowed);
-
-                if (!disallowedUris.Contains(UriDisallowed))
-                {
-                    if (!CheckIfUnsupported(UriDisallowed))
-                    {
-                        disallowedUris.Add(UriDisallowed);
-                    }
-                    logger.Debug($"Added Disallow rule: Disallow: {lineDisallowed}");
-                }
-                else
-                {
-                    logger.Debug($"Rule already existed: Disallow: {lineDisallowed}");
-                }
+                ProcessDisallowRule(line);
             }
             else
             {
@@ -323,15 +281,85 @@ namespace JoyfulSpider.Library.RobotParser
             }
         }
 
-        public bool Allowed(Uri targetUri) // I am pretty sure this is not correct at this point :(
+        private void ProcessAllowRule(string line)
+        {
+            logger.Debug($"ProcessAllow(string {line})");
+
+            string lineAllowed = line.Split(' ')[1];
+
+            if (lineAllowed == "/")
+            {
+                logger.Info("ProcessAllow(line): Ignoring rule for /");
+                return;
+            }
+
+            Uri UriAllowed = new Uri(BaseUri, lineAllowed);
+
+            if (!allowedUris.Contains(UriAllowed))
+            {
+                if (IsRuleSupported(UriAllowed))
+                {
+                    allowedUris.Add(UriAllowed);
+                    logger.Debug($"ProcessAllow(line): Added Allow rule: Allow: {lineAllowed}");
+                }
+            }
+            else
+            {
+                logger.Debug($"ProcessAllow(line): Rule already existed: Allow: {lineAllowed}");
+            }
+        }
+
+        private void ProcessDisallowRule(string line)
+        {
+            logger.Debug($"ProcessDisallow(string {line})");
+
+            string lineDisallowed = line.Split(' ')[1];
+
+            if (lineDisallowed == "*")
+            {
+                // Note "*" is non-standard. (https://en.wikipedia.org/wiki/Robots_exclusion_standard#Nonstandard_extensions)
+                // We ignore these rules unless HonorWildcardDisallow == true!
+                foundWildcardDisallow = true;
+
+                logger.Warn("ProcessDisallow(line): Found Disallow *, which is not standards compliant!");
+            }
+
+            if (lineDisallowed == "/")
+            {
+                RootDisallowed = true;
+                logger.Info("ProcessDisallow(line): Found root (/) Disallow rule");
+            }
+
+            Uri UriDisallowed = new Uri(BaseUri, lineDisallowed);
+
+            if (!disallowedUris.Contains(UriDisallowed))
+            {
+                if (IsRuleSupported(UriDisallowed))
+                {
+                    disallowedUris.Add(UriDisallowed);
+                    logger.Debug($"ProcessDisallow(line): Added Disallow rule: Disallow: {lineDisallowed}");
+                }
+            }
+            else
+            {
+                logger.Debug($"ProcessDisallow(line): Rule already existed: Disallow: {lineDisallowed}");
+            }
+        }
+
+        public bool Allowed(Uri targetUri) // I am not 100% convinced the logic is correct, however this seems to work well enough for now
         {
             logger.Debug($"Allowed(Uri {targetUri})");
             bool allowed = true;
 
+            if(BaseUri.Host != targetUri.Host)
+            {
+                logger.Error($"Allowed(targetUri): {BaseUri.Host} != {targetUri.Host}");
+            }
+
             // Check if we are not allowed to crawl anything
             if (!AnyAllowed)
             {
-                logger.Info("We are not allowed to crawl any Uris!");
+                logger.Info("Allowed(targetUri): We are not allowed to crawl any Uris!");
                 return false;
             }
 
@@ -367,13 +395,30 @@ namespace JoyfulSpider.Library.RobotParser
                 }
             }
 
-            logger.Debug($"We {(allowed ? "are" : "are NOT")} allowed to crawl {targetUri}");
+            logger.Debug($"Allowed(targetUri): We {(allowed ? "are" : "are NOT")} allowed to crawl {targetUri}");
             return allowed;
         }
 
-        private bool CheckIfUnsupported(Uri uri)
+        // Check if we don't (currently) handle/support these rules!
+        // TODO: Support the damn rules already!
+        private bool IsRuleSupported(Uri uri)
         {
-            return false;
+            logger.Debug($"IsRuleSupported({uri})");
+            bool supported = true;
+
+            if(!string.IsNullOrEmpty(uri.Fragment))
+            {
+                supported = false;
+                logger.Warn($"IsRuleSupported(uri): {uri} not supported: contains Fragment");
+            }
+
+            if(!string.IsNullOrEmpty(uri.Query))
+            {
+                supported = false;
+                logger.Warn($"IsRuleSupported(uri): {uri} not supported: contains Query");
+            }
+
+            return supported;
         }
 
     }
