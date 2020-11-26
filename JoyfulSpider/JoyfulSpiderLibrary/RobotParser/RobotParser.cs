@@ -22,8 +22,15 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 */
 
-// References: https://moz.com/learn/seo/robotstxt
-// http://www.robotstxt.org/orig.html
+/*
+References: 
+https://moz.com/learn/seo/robotstxt
+http://www.robotstxt.org/orig.html
+https://en.wikipedia.org/wiki/Robots_exclusion_standard
+*/
+
+// https://en.wikipedia.org/wiki/Robots_exclusion_standard#Nonstandard_extensions
+// TODO: Nonstandard extensions: Crawl-Delay, Sitemap
 
 using log4net;
 using System;
@@ -91,12 +98,22 @@ namespace JoyfulSpider.Library.RobotParser
         {
             get
             {
+                if(HonorWildCardDisallow && foundWildcardDisallow)
+                {
+                    return false;
+                }
+
                 return allowed.Count > 0 && RootDisallowed == false;
             }
         }
 
+        public bool HonorWildCardDisallow { get; set; } = false;
+      
         private readonly List<Uri> disallowed = new List<Uri>();
         private readonly List<Uri> allowed = new List<Uri>();
+
+        private bool foundWildcardDisallow = false;
+
         private readonly ILog logger = GlobalConfig.GetLogger("RobotParser");
 
 
@@ -239,7 +256,16 @@ namespace JoyfulSpider.Library.RobotParser
             {
                 string lineDisallowed = line.Split(' ')[1];
 
-                if (lineDisallowed == "/")
+                if(lineDisallowed == "*") 
+                {
+                    // Note "*" is non-standard. (https://en.wikipedia.org/wiki/Robots_exclusion_standard#Nonstandard_extensions)
+                    // We ignore these rules unless HonorWildcardDisallow == true!
+                    foundWildcardDisallow = true;
+                   
+                    logger.Warn("Found Disallow *, which is not standards compliant!");
+                }
+
+                if (lineDisallowed == "/") 
                 {
                     RootDisallowed = true;
                 }
