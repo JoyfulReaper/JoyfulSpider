@@ -23,30 +23,22 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 */
 
-// We can likely re-factor some stuff to get rid of this class,
-// Which was used for testing before switching to log4net
-// Or keep it as an easy way to quit on a Fatal error
-
-using System;
+using System.Net;
+using log4net;
+using JoyfulSpider.Library;
 
 namespace JoyfulSpider.Library
 {
-    public static class ErrorHandler
+    public static class WebClientHelper
     {
-        public static void ReportErrorAndQuit(string message, Exception e)
+        private static readonly ILog logger = GlobalConfig.GetLogger("WebClientHelper");
+
+        public static void AddHeaders(WebClient wc)
         {
-            var log = GlobalConfig.GetLogger("FatalErrorReporter");
+            logger.Debug("AddHeaders(Webclient wc)");
 
-            if (e != null)
-            {
-                log.Fatal(message, e);
-            }
-            else
-            {
-                log.Fatal(message);
-            }
-
-            Environment.Exit(-1);
+            wc.Headers.Add("user-agent", GlobalConfig.UserAgent);
+            logger.Debug($"added header: user-agent: {wc.Headers["user-agent"]}");
         }
     }
 }
