@@ -25,6 +25,7 @@ SOFTWARE.
 // References: https://moz.com/learn/seo/robotstxt
 // http://www.robotstxt.org/orig.html
 
+using log4net;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -66,7 +67,7 @@ namespace JoyfulSpider.Library.RobotParser
             set 
             { 
                 robotsText = value;
-                Parse();
+                //Parse(); Don't parse automaticly (was double parsing)
             }
         }
         /// <summary>
@@ -90,6 +91,7 @@ namespace JoyfulSpider.Library.RobotParser
 
         private List<Uri> disallowed = new List<Uri>();
         private List<Uri> allowed = new List<Uri>();
+        private ILog logger = GlobalConfig.GetLogger("RobotParser");
 
 
         /// <summary>
@@ -99,6 +101,8 @@ namespace JoyfulSpider.Library.RobotParser
         /// <param name="robotFileName">The filename to download and parse</param>
         public RobotParser(Uri baseUri, string robotFileName) : this(baseUri)
         {
+            logger.Debug($"ctor: RobotParser(Uri {baseUri}, string {robotFileName}) : this(baseUri)");
+
             RobotFileName = robotFileName;
         }
 
@@ -108,6 +112,8 @@ namespace JoyfulSpider.Library.RobotParser
         /// <param name="baseUri"></param>
         public RobotParser(Uri baseUri)
         {
+            logger.Debug($"ctor: RobotParser(Uri {baseUri})");
+
             BaseUri = baseUri;
             DownloadRobotsTXT();
             Parse();
@@ -119,6 +125,8 @@ namespace JoyfulSpider.Library.RobotParser
         /// <param name="robotsFileText">Robots.txt text</param>
         public RobotParser(string robotsFileText)
         {
+            logger.Debug($"ctor: RobotParser(string {robotsFileText})");
+
             RobotsText = robotsFileText;
             Parse();
         }
@@ -128,6 +136,8 @@ namespace JoyfulSpider.Library.RobotParser
         /// </summary>
         public void DownloadRobotsTXT()
         {
+            logger.Debug("DownloadRobotsTXT()");
+
             WebClient wc = new WebClient();
 
             try
@@ -135,20 +145,31 @@ namespace JoyfulSpider.Library.RobotParser
                 WebClientHelper.AddHeaders(wc);
 
                 RobotsText = wc.DownloadString(RobotsUri);
-            } catch (Exception e)
+            } 
+            catch (Exception e)
             {
                 ErrorHandler.ReportErrorOnConsoleAndQuit("DownloadRobotsTXT() exception caught:", e); // TODO Better logging/Error handling
             }
+
+            logger.Debug("DownloadRobotsTXT(): robots.txt file downloaded successfully.");
         }
 
         public void Parse()
         {
+            logger.Debug("Parse()");
+
             Parse(robotsText);
         }
 
         // TODO: Currently only Parses Allow and Disallow
+        /// <summary>
+        /// Parses the robots.txt rules
+        /// </summary>
+        /// <param name="robotsText"></param>
         public void Parse(string robotsText)
         {
+            logger.Debug("Prase(robotsText)");
+
             using (StringReader reader = new StringReader(robotsText))
             {
                 string line = String.Empty;
@@ -159,18 +180,33 @@ namespace JoyfulSpider.Library.RobotParser
                     if(line.StartsWith("User-agent:"))
                     {
                         string agent = line.Split(' ')[1];
-                        if(agent == "*" || agent == GlobalConfig.UserAgent)
+                        logger.Debug($"Found User-agent: {agent}");
+
+                        if (agent == "*" || agent == GlobalConfig.UserAgent)
                         {
+                            logger.Debug($"Proccessing User-agent {agent} becasue it applies to us.");
+
                             CheckPermissions(reader, out bool moreLines);
                             line = moreLines ? string.Empty : null;
+                        }
+                        else
+                        {
+                            logger.Debug($"Ignoring rules for {agent}");
                         }
                     }
                 }
             }
         }
 
+        /// <summary>
+        /// Checks the robots.txt files for any relevant allows or disallows
+        /// </summary>
+        /// <param name="reader">The reader wrapping the robots txt</param>
+        /// <param name="moreLines">true if there are more lines in the reader, otherwise false</param>
         private void CheckPermissions(StringReader reader, out bool moreLines)
         {
+            logger.Debug("CheckPermissions(string reader read, out bool moreLines)");
+
             string line;
 
             while(true)
@@ -184,6 +220,8 @@ namespace JoyfulSpider.Library.RobotParser
                     Uri UriAllowed = new Uri(BaseUri, lineAllowed);
 
                     allowed.Add(UriAllowed);
+
+                    logger.Debug($"Added Allow rule: Allow: {lineAllowed}");
                 }
                 else if(line.StartsWith("Disallow:"))
                 {
@@ -195,6 +233,8 @@ namespace JoyfulSpider.Library.RobotParser
                     }
                     Uri UriDisallowed = new Uri(BaseUri, lineDisallowed);
                     disallowed.Add(UriDisallowed);
+
+                    logger.Debug($"Added Disallow rule: Disallow: {lineDisallowed}");
                 }
                 else
                 {
@@ -206,8 +246,7 @@ namespace JoyfulSpider.Library.RobotParser
 
         public bool Allowed(Uri uri)
         {
-            throw new NotImplementedException();
-
+            return false;
             if(!AnyAllowed)
             {
                 return false;

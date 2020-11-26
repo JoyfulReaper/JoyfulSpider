@@ -23,14 +23,21 @@ SOFTWARE.
 */
 
 using System.Net;
+using log4net;
+using JoyfulSpider.Library;
 
 namespace JoyfulSpider.Library
 {
     public static class WebClientHelper
     {
+        private static readonly ILog logger = GlobalConfig.GetLogger("WebClientHelper");
+
         public static void AddHeaders(WebClient wc)
         {
+            logger.Debug("AddHeaders(Webclient wc)");
+
             wc.Headers.Add("user-agent", GlobalConfig.UserAgent);
+            logger.Debug($"added header: user-agent: {wc.Headers["user-agent"]}");
         }
     }
 }
