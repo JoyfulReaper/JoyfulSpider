@@ -39,10 +39,12 @@ namespace JoyfulSpider.Library.RobotParser
         /// The base Uri
         /// </summary>
         public Uri BaseUri { get; private set; } = null;
+
         /// <summary>
         /// The name of the robots.txt file to parse
         /// </summary>
         public string RobotFileName { get; set; } = "robots.txt";
+
         /// <summary>
         /// The absolute Uri of the RobotsFileName
         /// </summary>
@@ -58,6 +60,7 @@ namespace JoyfulSpider.Library.RobotParser
                 return new Uri(BaseUri, RobotFileName);
             }
         }
+
         /// <summary>
         /// The full text of the robots file
         /// </summary>
@@ -70,14 +73,17 @@ namespace JoyfulSpider.Library.RobotParser
                 //Parse(); Don't parse automaticly (was double parsing)
             }
         }
+
         /// <summary>
         /// The full text of the robots.txt file
         /// </summary>
         private string robotsText = string.Empty;
+
         /// <summary>
         /// True if there is a Disallow: / rule
         /// </summary>
         public bool RootDisallowed { get; private set; }
+
         /// <summary>
         /// True if the spider has access to ANY links
         /// </summary>
@@ -89,15 +95,15 @@ namespace JoyfulSpider.Library.RobotParser
             }
         }
 
-        private List<Uri> disallowed = new List<Uri>();
-        private List<Uri> allowed = new List<Uri>();
-        private ILog logger = GlobalConfig.GetLogger("RobotParser");
+        private readonly List<Uri> disallowed = new List<Uri>();
+        private readonly List<Uri> allowed = new List<Uri>();
+        private readonly ILog logger = GlobalConfig.GetLogger("RobotParser");
 
 
         /// <summary>
         /// Construct a RobotParser with the given baseUri and RobotFileName
         /// </summary>
-        /// <param name="baseUri">The best Uri</param>
+        /// <param name="baseUri">The base Uri</param>
         /// <param name="robotFileName">The filename to download and parse</param>
         public RobotParser(Uri baseUri, string robotFileName) : this(baseUri)
         {
@@ -109,7 +115,7 @@ namespace JoyfulSpider.Library.RobotParser
         /// <summary>
         /// Construct a RobotParser with the given baseUri
         /// </summary>
-        /// <param name="baseUri"></param>
+        /// <param name="baseUri">base Uri</param>
         public RobotParser(Uri baseUri)
         {
             logger.Debug($"ctor: RobotParser(Uri {baseUri})");
@@ -120,13 +126,15 @@ namespace JoyfulSpider.Library.RobotParser
         }
 
         /// <summary>
-        /// Construct a RobotParser with the given robots.txt text
+        /// Construct a RobotParser with the given baseUri and robots file contents
         /// </summary>
-        /// <param name="robotsFileText">Robots.txt text</param>
-        public RobotParser(string robotsFileText)
+        /// <param name="robotsFileText">Full text of the robots.txt file</param>
+        /// <param name="baseUri">base Uri</param>
+        public RobotParser(string robotsFileText, Uri baseUri)
         {
-            logger.Debug($"ctor: RobotParser(string {robotsFileText})");
+            logger.Debug($"ctor: RobotParser(string robotsFileText, Uri {baseUri})");
 
+            BaseUri = baseUri;
             RobotsText = robotsFileText;
             Parse();
         }
@@ -151,7 +159,7 @@ namespace JoyfulSpider.Library.RobotParser
                 ErrorHandler.ReportErrorOnConsoleAndQuit("DownloadRobotsTXT() exception caught:", e); // TODO Better logging/Error handling
             }
 
-            logger.Debug("DownloadRobotsTXT(): robots.txt file downloaded successfully.");
+            logger.Info("DownloadRobotsTXT(): robots.txt file downloaded successfully.");
         }
 
         public void Parse()
@@ -177,13 +185,13 @@ namespace JoyfulSpider.Library.RobotParser
 
                 line = reader.ReadLine();
 
-                do
+                while (line != null)
                 {
                     if (line.StartsWith("User-agent:"))
                     {
                         currentAgent = line.Split(' ')[1];
 
-                        logger.Debug($"Found User-agent: {currentAgent}");
+                        logger.Info($"Found User-agent: {currentAgent}");
                     }
                     else if (line.StartsWith("Allow") || line.StartsWith("Disallow"))
                     {
@@ -191,23 +199,15 @@ namespace JoyfulSpider.Library.RobotParser
 
                         if (currentAgent == "*" || currentAgent == GlobalConfig.UserAgent)
                         {
-                            logger.Debug("The rule applies to us");
-
-                            line = reader.ReadLine();
                             if (line != null)
                             {
                                 ProccessAllowOrDisallow(line);
                             }
                         }
-                        else
-                        {
-                            logger.Debug("The rule does not apply to us.");
-                        }
                     }
 
                     line = reader.ReadLine();
-
-                } while (line != null);
+                }
             }
         }
 
@@ -217,7 +217,7 @@ namespace JoyfulSpider.Library.RobotParser
         /// <param name="line">The rule to process</param>
         private void ProccessAllowOrDisallow(string line)
         {
-            logger.Debug("CheckPermissions(string line)");
+            logger.Debug("ProccessAllowOrDisallow(string line)");
 
             if (line.StartsWith("Allow:"))
             {
@@ -256,6 +256,10 @@ namespace JoyfulSpider.Library.RobotParser
                     logger.Debug($"Rule already existed: Disallow: {lineDisallowed}");
                 }
             }
+            else
+            {
+                logger.Warn($"ProccessAllowOrDisallow(): {line} is not an allow/disallow rule");
+            }
         }
 
         public bool Allowed(Uri uri)
@@ -268,8 +272,6 @@ namespace JoyfulSpider.Library.RobotParser
             {
                 return false;
             }
-
-
 
             return true;
         }

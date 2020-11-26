@@ -41,8 +41,8 @@ namespace JoyfulSpider.ConsoleUI
             Uri uri = new Uri(input);
             RobotParser rp = new RobotParser(uri);
 
-            ConsoleHelper.ColorWriteLine(ConsoleColor.Red, "Dumping robots file: ");
-            ConsoleHelper.ColorWriteLine(rp.RobotsText);
+            //ConsoleHelper.ColorWriteLine(ConsoleColor.Red, "Dumping robots file: ");
+            //ConsoleHelper.ColorWriteLine(rp.RobotsText);
         }
     }
 }
