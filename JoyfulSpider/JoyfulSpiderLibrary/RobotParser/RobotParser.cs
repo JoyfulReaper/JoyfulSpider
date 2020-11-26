@@ -173,84 +173,105 @@ namespace JoyfulSpider.Library.RobotParser
             using (StringReader reader = new StringReader(robotsText))
             {
                 string line = String.Empty;
+                string currentAgent = string.Empty;
 
-                while(line != null)
+                line = reader.ReadLine();
+
+                do
                 {
-                    line = reader.ReadLine();
-                    if(line.StartsWith("User-agent:"))
+                    if (line.StartsWith("User-agent:"))
                     {
-                        string agent = line.Split(' ')[1];
-                        logger.Debug($"Found User-agent: {agent}");
+                        currentAgent = line.Split(' ')[1];
 
-                        if (agent == "*" || agent == GlobalConfig.UserAgent)
+                        logger.Debug($"Found User-agent: {currentAgent}");
+                    }
+                    else if (line.StartsWith("Allow") || line.StartsWith("Disallow"))
+                    {
+                        logger.Debug($"Found Allow/Disallow Rule for {currentAgent}");
+
+                        if (currentAgent == "*" || currentAgent == GlobalConfig.UserAgent)
                         {
-                            logger.Debug($"Proccessing User-agent {agent} becasue it applies to us.");
+                            logger.Debug("The rule applies to us");
 
-                            CheckPermissions(reader, out bool moreLines);
-                            line = moreLines ? string.Empty : null;
+                            line = reader.ReadLine();
+                            if (line != null)
+                            {
+                                ProccessAllowOrDisallow(line);
+                            }
                         }
                         else
                         {
-                            logger.Debug($"Ignoring rules for {agent}");
+                            logger.Debug("The rule does not apply to us.");
                         }
                     }
-                }
+
+                    line = reader.ReadLine();
+
+                } while (line != null);
             }
         }
 
         /// <summary>
         /// Checks the robots.txt files for any relevant allows or disallows
         /// </summary>
-        /// <param name="reader">The reader wrapping the robots txt</param>
-        /// <param name="moreLines">true if there are more lines in the reader, otherwise false</param>
-        private void CheckPermissions(StringReader reader, out bool moreLines)
+        /// <param name="line">The rule to process</param>
+        private void ProccessAllowOrDisallow(string line)
         {
-            logger.Debug("CheckPermissions(string reader read, out bool moreLines)");
+            logger.Debug("CheckPermissions(string line)");
 
-            string line;
-
-            while(true)
+            if (line.StartsWith("Allow:"))
             {
-                line = reader.ReadLine();
+                string lineAllowed = line.Split(' ')[1];
 
-                if(line.StartsWith("Allow:"))
+                Uri UriAllowed = new Uri(BaseUri, lineAllowed);
+
+                if (!allowed.Contains(UriAllowed))
                 {
-                    string lineAllowed = line.Split(' ')[1];
-
-                    Uri UriAllowed = new Uri(BaseUri, lineAllowed);
-
                     allowed.Add(UriAllowed);
-
                     logger.Debug($"Added Allow rule: Allow: {lineAllowed}");
                 }
-                else if(line.StartsWith("Disallow:"))
+                else
                 {
-                    string lineDisallowed = line.Split(' ')[1];
+                    logger.Debug($"Rule already existed: Allow: {lineAllowed}");
+                }
+            }
+            else if (line.StartsWith("Disallow:"))
+            {
+                string lineDisallowed = line.Split(' ')[1];
 
-                    if(lineDisallowed == "/")
-                    {
-                        RootDisallowed = true;
-                    }
-                    Uri UriDisallowed = new Uri(BaseUri, lineDisallowed);
+                if (lineDisallowed == "/")
+                {
+                    RootDisallowed = true;
+                }
+
+                Uri UriDisallowed = new Uri(BaseUri, lineDisallowed);
+
+                if (!disallowed.Contains(UriDisallowed))
+                {
                     disallowed.Add(UriDisallowed);
-
                     logger.Debug($"Added Disallow rule: Disallow: {lineDisallowed}");
                 }
                 else
                 {
-                    moreLines = line == null;
-                    return;
+                    logger.Debug($"Rule already existed: Disallow: {lineDisallowed}");
                 }
             }
         }
 
         public bool Allowed(Uri uri)
         {
-            return false;
+            throw new NotImplementedException();
+
+            logger.Debug($"Allowed(Uri {uri}");
+
             if(!AnyAllowed)
             {
                 return false;
             }
+
+
+
+            return true;
         }
     }
 }
